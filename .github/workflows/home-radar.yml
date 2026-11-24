@@ -1,0 +1,29 @@
+name: Actualizar HomeRadar
+on:
+  schedule:
+    - cron: '0 8,15,21 * * *'
+      timezone: Europe/Madrid
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: homeradar-production-index
+  cancel-in-progress: false
+jobs:
+  update:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/update.mjs
+      - name: Publicar cambios del índice
+        run: |
+          git add public/catalog.json
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name='HomeRadar' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Actualizar índice de vivienda'
+          git push origin HEAD:main
+
